@@ -7,15 +7,18 @@ client = MongoClient(
 
 
 def test_insert():
-    user_db = client.unmatched
-    res = user_db.users.insert_one(
+    db = client["unmatched-db"]
+    res = db.users.replace_one(
+        {"email": "kannan.cyberpunk@gmail.com"},
         {
-            "emailId": "kannan.cyberpunk@gmail.com",
-            "user_id": str(uuid.uuid4()),
-            "role": "super",
+            "email": "kannan.cyberpunk@gmail.com",
+            "uid": str(uuid.uuid4()),
+            "role": 0,
             "password": "pbkdf2:sha256:150000$4jsKVoL5$a525769c5ac0d793a0232c871c33e06957ddf25f8619e8942e560b93952d1de5",
+            "managers": [],
             "isSubmitted": False
-        }
+        },
+        upsert=True
     )
     print({"response": res})
 
