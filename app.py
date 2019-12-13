@@ -5,6 +5,7 @@ from flask import Flask, jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
 from pymongo import MongoClient
 from flask_cors import CORS
+import pprint
 import uuid
 import config
 import utils
@@ -13,8 +14,8 @@ app = Flask(__name__)
 CORS(app)
 
 client = MongoClient(
-    'mongodb+srv://' + config.DB_USERNAME + ':' + config.DB_PASSWORD + '@andromeda-aghsp.mongodb.net/test?retryWrites'
-                                                                       '=true&w=majority')
+        'mongodb+srv://' + config.DB_USERNAME + ':' + config.DB_PASSWORD + '@andromeda-aghsp.mongodb.net/test?retryWrites'
+                                                                           '=true&w=majority')
 
 
 @app.route('/api/login/', methods=['POST'])
@@ -29,9 +30,11 @@ def login():
         if check_password_hash(str(user_obj['password']), str(password)):
             survey_privileges_obj = db.surveyPrivileges.find_one({'uid': user_obj['uid']})
             return jsonify({
-                'isAuthenticated': True, 'uid': user_obj['uid'],
-                'role': user_obj['role'],
-                'surveyPrivileges': survey_privileges_obj['surveyids']})
+                'isAuthenticated' : True, 'uid': user_obj['uid'],
+                'role'            : user_obj['role'],
+                'surveyPrivileges': survey_privileges_obj['surveyids'],
+                'adminPrivileges' : survey_privileges_obj['adminids']
+            })
         else:
             return jsonify({'isAuthenticated': False, 'uid': '', 'role': ''})
     else:
@@ -44,12 +47,14 @@ def feed_user_access():
     db = client['unmatched-db']
     user_obj = db.users.find_one({'uid': access_code})
     survey_privileges_obj = db.surveyPrivileges.find_one({'uid': user_obj['uid']})
+    print(survey_privileges_obj)
     if user_obj is not None:
         return jsonify({
-            'isAuthenticated': True,
-            'uid': access_code,
+            'isAuthenticated' : True,
+            'uid'             : access_code,
             'surveyPrivileges': survey_privileges_obj['surveyids'],
-            'role': user_obj['role']
+            'adminPrivileges' : survey_privileges_obj['adminids'],
+            'role'            : user_obj['role']
         })
     else:
         return jsonify({'isAuthenticated': False, 'uid': ''})
@@ -62,18 +67,20 @@ def register():
     # check if the referrer is admin / super admin
     ref = db.users.find_one({'uid': data['ref']})
     new_user = {}
+
     if ref is not None:
         # check if the invited user exists
         existing_user = db.users.find_one({'email': data['email']})
         # admin privilege check
-        if ref['role'] < 2:
+        existing_privileges = db.surveyPrivileges.find_one({'uid': data['ref']})['adminids']
+        if utils.isSublist(existing_privileges, data['surveyids']):
             if existing_user is None:
                 new_password = utils.generate_secure_password()
                 print(data['email'], ' : ', new_password)
                 new_user = {
-                    'email': data['email'],
-                    'uid': str(uuid.uuid4()),
-                    'role': 2,
+                    'email'   : data['email'],
+                    'uid'     : str(uuid.uuid4()),
+                    'role'    : 2,
                     'password': generate_password_hash(new_password),
                     'referrer': data['ref'],
                 }
@@ -81,7 +88,7 @@ def register():
                 db.users.insert(new_user)
                 # survey privileges
                 db.surveyPrivileges.insert(
-                    {'uid': new_user['uid'], 'surveyids': data['surveyids'] })
+                        {'uid': new_user['uid'], 'surveyids': data['surveyids'], 'adminids': []})
                 # send an invitation email with new password and access link
                 utils.send_email(new_user['email'], new_password, new_user['uid'])
             else:
@@ -106,10 +113,11 @@ def register():
 @app.route('/api/store-survey/', methods=['POST'])
 def save_survey():
     data = request.get_json(force=True)
-    print(data)
     db = client['unmatched-db']
-    res = db.answers.update({'uid': data['uid'], 'surveyId': data['surveyId']}, data, upsert=True)
-    print(res)
+    user_obj = db.users.find_one({'uid': data['uid']})
+    data['email'] = user_obj['email']
+    print(data)
+    db.answers.update({'uid': data['uid'], 'surveyId': data['surveyId']}, data, upsert=True)
     return jsonify({'isResponseUpdated': True})
 
 
@@ -125,6 +133,27 @@ def get_survey_response():
     else:
         res = {'success': False}
     return jsonify(res)
+
+
+# admin apis
+@app.route('/api/admin/get-all-response/', methods=['GET'])
+def get_admin_all_response():
+    uid = request.args.get('uid')
+    surveyid = request.args.get('surveyid')
+    db = client['unmatched-db']
+    user_obj = db.users.find_one({'uid': uid})
+    if user_obj['role'] < 2:
+        res = db.answers.find({'surveyId': surveyid})
+        data = []
+        for entry in res:
+            del entry['_id']
+            data.append(entry)
+        return jsonify({'success': True, 'answers': data})
+    else:
+        return jsonify({'success': False})
+
+
+
 
 
 if __name__ == '__main__':

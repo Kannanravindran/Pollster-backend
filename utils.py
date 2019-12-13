@@ -5,6 +5,9 @@ from sendgrid.helpers.mail import Mail
 import config as cfg
 
 
+# from Crypto.Cipher import AES
+
+
 def send_email(recipient_email, password, uid):
     message = Mail(
             from_email='no-reply@unmatched.io',
@@ -34,3 +37,10 @@ def generate_secure_password():
     alphabet = string.ascii_letters + string.digits
     password = ''.join(secrets.choice(alphabet) for i in range(20))
     return password
+
+
+def isSublist(adminids, surveyids):
+    for surveyid in surveyids:
+        if surveyid not in adminids:
+            return False
+    return True
