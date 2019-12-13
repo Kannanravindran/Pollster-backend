@@ -18,7 +18,7 @@ def test_insert():
             "managers": [],
             "isSubmitted": False
         },
-        upsert=True
+        upsert=True,
     )
     print({"response": res})
 
