@@ -7,6 +7,7 @@ from pymongo import MongoClient
 from flask_cors import CORS
 import config
 import utils
+from statistics import median
 
 app = Flask(__name__)
 CORS(app)
@@ -140,6 +141,35 @@ def admin_upgrade():
             utils.register_new_user(db, existing_user, data, is_upgrade=True)
 
     return jsonify({'isUpgraded': True})
+
+@app.route('/api/stats/', methods=['GET'])
+def get_stats():
+    uid = request.args.get('uid')
+    db = client['unmatched-db']
+    user_obj = db.users.find_one({'uid': uid})
+    if user_obj['role'] < 2:
+        survery_privileges = db.surveyPrivileges.find_one({'uid': uid})['adminids']
+        res = {}
+        for surveyid in survery_privileges:
+            res[surveyid] = { }
+            answers = db.answers.find({'surveyId': surveyid, 'isSubmitted': True})
+            stat_list = []
+            Y_counter = 0
+            N_counter = 0
+            for entry in answers:
+                if entry['1'] == 'Y':
+                    Y_counter += 1
+                else:
+                    N_counter += 1
+                stat_list.append(int(entry['2']))
+                res[surveyid]["Y"] = (Y_counter*100)/(Y_counter+N_counter)
+                res[surveyid]["N"] = (N_counter * 100) / (Y_counter + N_counter)
+                res[surveyid]['median'] = median(stat_list)
+                res[surveyid]['user_count'] = len(stat_list)
+                res[surveyid]['avg'] = round(sum(stat_list)/len(stat_list),2 )
+        print(res)
+        return jsonify({"success": True, "stat": res})
+
 
 
 if __name__ == '__main__':
