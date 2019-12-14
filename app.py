@@ -74,38 +74,7 @@ def register():
         # admin privilege check
         existing_privileges = db.surveyPrivileges.find_one({'uid': data['ref']})['adminids']
         if utils.isSublist(existing_privileges, data['surveyids']):
-            if existing_user is None:
-                new_password = utils.generate_secure_password()
-                print(data['email'], ' : ', new_password)
-                new_user = {
-                    'email'   : data['email'],
-                    'uid'     : str(uuid.uuid4()),
-                    'role'    : 2,
-                    'password': generate_password_hash(new_password),
-                    'referrer': data['ref'],
-                }
-                # store the new user
-                db.users.insert(new_user)
-                # survey privileges
-                db.surveyPrivileges.insert(
-                        {'uid': new_user['uid'], 'surveyids': data['surveyids'], 'adminids': []})
-                # send an invitation email with new password and access link
-                utils.send_email(new_user['email'], new_password, new_user['uid'])
-            else:
-                print('user exists')
-                existing_survey_privileges = db.surveyPrivileges.find_one({'uid': existing_user['uid']})
-                print("exist prev: ", existing_survey_privileges)
-                new_survey_privileges = data['surveyids']
-                # check if the user already has access to the surveys
-                new_survey_privileges = existing_survey_privileges['surveyids'] + new_survey_privileges
-                new_survey_privileges = list(set(new_survey_privileges))
-                print("new prev: ", type(new_survey_privileges))
-                # give access to new surveys
-                res = db.surveyPrivileges.update_one(
-                        existing_survey_privileges,
-                        {'$set': {'surveyids': new_survey_privileges}}
-                )
-                print(res)
+            utils.register_new_user(db, existing_user, data, is_upgrade=False)
 
     return jsonify({'isInvited': True})
 
@@ -153,7 +122,23 @@ def get_admin_all_response():
         return jsonify({'success': False})
 
 
+@app.route('/api/admin/upgrade/', methods=['POST'])
+def admin_upgrade():
+    data = request.get_json(force=True)
+    db = client['unmatched-db']
+    # check if the referrer is admin / super admin
+    ref = db.users.find_one({'uid': data['ref']})
+    print(ref)
 
+    if ref is not None:
+        # check if the invited user exists
+        existing_user = db.users.find_one({'email': data['email']})
+        # print(existing_user)
+        # admin privilege check
+        if ref['role'] == 0:
+            utils.register_new_user(db, existing_user, data, is_upgrade=True)
+
+    return jsonify({'isUpgraded': True})
 
 
 if __name__ == '__main__':
