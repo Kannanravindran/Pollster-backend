@@ -5,9 +5,11 @@ chardet==3.0.4
 Click==7.0
 crypto==1.4.1
 dnspython==1.16.0
+docutils==0.15.2
 Flask==1.1.1
 Flask-Cors==3.0.8
 Flask-SendGrid==0.7.1
+gunicorn==20.0.4
 idna==2.8
 isort==4.3.21
 itsdangerous==1.1.0
@@ -20,11 +22,13 @@ pycrypto==2.6.1
 pylint==2.4.4
 pymongo==3.9.0
 python-http-client==3.2.1
+python2-secrets==1.0.5
 PyYAML==5.2
 requests==2.22.0
 sendgrid==6.1.0
 shellescape==3.4.1
 six==1.13.0
+statistics==1.0.3.5
 typed-ast==1.4.0
 urllib3==1.25.7
 Werkzeug==0.16.0
