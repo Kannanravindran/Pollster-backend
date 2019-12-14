@@ -5,8 +5,6 @@ from flask import Flask, jsonify, request
 from werkzeug.security import check_password_hash, generate_password_hash
 from pymongo import MongoClient
 from flask_cors import CORS
-import pprint
-import uuid
 import config
 import utils
 
@@ -17,6 +15,9 @@ client = MongoClient(
         'mongodb+srv://' + config.DB_USERNAME + ':' + config.DB_PASSWORD + '@andromeda-aghsp.mongodb.net/test?retryWrites'
                                                                            '=true&w=majority')
 
+@app.route('/api/', methods=['GET'])
+def test():
+    return jsonify({"success": True})
 
 @app.route('/api/login/', methods=['POST'])
 def login():
