@@ -48,4 +48,4 @@ gunicorn --workers=20 --threads=2 --bind 127.0.0.1:5000 app:app
 ```
 
 Once the server is up and running, the APIs should be exposed and accessible from the frontend.
-Check this (link)[https://github.com/Kannanravindran/Pollster] out for setting up the frontend part of the application
+Check this [link](https://github.com/Kannanravindran/Pollster) out for setting up the frontend part of the application
