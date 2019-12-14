@@ -56,7 +56,7 @@ def register_new_user(db, existing_user, data, is_upgrade):
             new_user = {
                 'email'   : data['email'],
                 'uid'     : str(uuid.uuid4()),
-                'role'    : 2,
+                'role'    : 1,
                 'password': generate_password_hash(new_password),
                 'referrer': data['ref'],
             }
@@ -69,7 +69,7 @@ def register_new_user(db, existing_user, data, is_upgrade):
             new_user = {
                 'email'   : data['email'],
                 'uid'     : str(uuid.uuid4()),
-                'role'    : 1,
+                'role'    : 2,
                 'password': generate_password_hash(new_password),
                 'referrer': data['ref'],
             }
