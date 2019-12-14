@@ -110,9 +110,9 @@ def get_admin_all_response():
     uid = request.args.get('uid')
     surveyid = request.args.get('surveyid')
     db = client['unmatched-db']
-    user_obj = db.users.find_one({'uid': uid, 'isSubmitted': True})
+    user_obj = db.users.find_one({'uid': uid})
     if user_obj['role'] < 2:
-        res = db.answers.find({'surveyId': surveyid})
+        res = db.answers.find({'surveyId': surveyid, 'isSubmitted': True})
         data = []
         for entry in res:
             del entry['_id']
