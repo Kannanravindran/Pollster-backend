@@ -21,7 +21,7 @@ pylint==2.4.4
 pymongo==3.9.0
 python-http-client==3.2.1
 python2-secrets==1.0.5
-PyYAML==5.2
+PyYAML==5.4
 requests==2.22.0
 sendgrid==6.1.0
 shellescape==3.4.1
